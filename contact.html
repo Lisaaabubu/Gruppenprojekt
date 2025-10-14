@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kontakt - Wetterseite</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="logo">🌤️ Wetterseite</div>
+      <nav class="menu">
+        <a href="index.html">Start</a>
+        <a href="weather.html">Wetter</a>
+        <a href="favorites.html">Meine Städte</a>
+        <a href="contact.html" class="active">Kontakt</a>
+      </nav>
+    </header>
+
+    <main class="content">
+      <div id="weather-container">
+        <h2>Kontakt</h2>
+
+        <form id="contactForm">
+          <input type="text" id="subject" placeholder="Betreff" required />
+          <textarea
+            id="message"
+            placeholder="Nachricht"
+            rows="6"
+            required
+          ></textarea>
+          <button type="button" onclick="openMail()">E-Mail öffnen</button>
+        </form>
+
+        <p id="contactStatus"></p>
+      </div>
+    </main>
+
+    <script>
+      function openMail() {
+        const subject = encodeURIComponent(
+          document.getElementById("subject").value.trim()
+        );
+        const message = encodeURIComponent(
+          document.getElementById("message").value.trim()
+        );
+
+        if (!subject || !message) {
+          document.getElementById("contactStatus").textContent =
+            "Bitte Betreff und Nachricht eingeben.";
+          return;
+        }
+
+        // Hier steht deine Zieladresse
+        const email = "fhb232589@fh-vie.ac.at";
+
+        // Erzeuge den Mailto-Link
+        const mailtoLink = `mailto:${email}?subject=${subject}&body=${message}`;
+
+        // Öffne das Standard-E-Mail-Programm
+        window.location.href = mailtoLink;
+      }
+    </script>
+  </body>
+</html>

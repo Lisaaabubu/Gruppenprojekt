@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wetterseite</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Kopfzeile mit Menü -->
+    <header class="header">
+      <div class="logo">🌤️ Wetterseite</div>
+      <nav class="menu">
+        <a href="index.html">Start</a>
+        <a href="weather.html" class="active">Wetter</a>
+        <a href="favorites.html">Meine Städte</a>
+        <a href="contact.html">Kontakt</a>
+      </nav>
+    </header>
+
+    <!-- Hauptinhalt -->
+    <main class="content">
+      <div id="weather-container">
+        <h2>Aktuelles Wetter</h2>
+        <input type="text" id="city" placeholder="Stadt eingeben" />
+        <button onclick="getWeather()">Suchen</button>
+        <button onclick="saveCity()">Speichern</button>
+
+        <img id="weather-icon" alt="Wetter Icon" />
+        <img id="condition-img" alt="Zustandsbild" />
+
+        <div id="temp-div"></div>
+        <div id="weather-info"></div>
+        <div id="hourly-forecast"></div>
+        <p id="status"></p>
+      </div>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

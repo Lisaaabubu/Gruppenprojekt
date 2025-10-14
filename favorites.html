@@ -3,31 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Startseite - Wetterseite</title>
+    <title>Meine Städte - Wetterseite</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <!-- Kopfzeile -->
     <header class="header">
       <div class="logo">🌤️ Wetterseite</div>
       <nav class="menu">
-        <a href="index.html" class="active">Start</a>
+        <a href="index.html">Start</a>
         <a href="weather.html">Wetter</a>
-        <a href="favorites.html">Meine Städte</a>
+        <a href="favorites.html" class="active">Meine Städte</a>
         <a href="contact.html">Kontakt</a>
       </nav>
     </header>
 
-    <!-- Hauptinhalt -->
     <main class="content">
       <div id="weather-container">
-        <h2>Willkommen auf der Wetterseite</h2>
-        <p>
-          Hier kannst du das aktuelle Wetter und eine Vorhersage für jede Stadt
-          abrufen.
-        </p>
-        <a href="weather.html"><button>Zur Wetterseite</button></a>
+        <h2>Gespeicherte Städte</h2>
+        <ul id="savedCitiesList" class="saved-list"></ul>
+        <button onclick="clearCities()">Liste leeren</button>
       </div>
     </main>
+
+    <script src="script.js"></script>
   </body>
 </html>

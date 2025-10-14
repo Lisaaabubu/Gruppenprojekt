@@ -1,0 +1,165 @@
+/*Grundlayout*/
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(to bottom right, #89bee9, #c2d0db);
+}
+
+/*Kopfzeile mit Menü*/
+.header {
+  background: rgba(20, 63, 156, 0.377);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 40px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logo {
+  color: #fff;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.menu a {
+  color: #fff;
+  text-decoration: none;
+  margin-left: 20px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.menu a:hover,
+.menu a.active {
+  background: #89bee9;
+  color: #1a1a1a;
+}
+
+/*Hauptbereich*/
+.content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+/*WETTER-SEITE*/
+#weather-container {
+  background: rgba(20, 63, 156, 0.377);
+  backdrop-filter: blur(12px);
+  width: min(95vw, 900px);
+  padding: 36px;
+  border-radius: 22px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+  text-align: center;
+}
+
+h2,
+p {
+  color: #fff;
+}
+
+/*Eingaben und Buttons*/
+input,
+textarea {
+  width: calc(100% - 16px);
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid white;
+  margin-top: 12px;
+  box-sizing: border-box;
+}
+
+button {
+  background: rgba(20, 63, 156, 0.5);
+  color: white;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: 14px;
+  min-width: 140px;
+}
+
+button:hover {
+  background: rgba(20, 63, 156, 0.8);
+}
+
+/*Wetteranzeige*/
+#weather-icon,
+#condition-img {
+  width: 130px;
+  height: 130px;
+  margin: 12px auto;
+  display: none;
+}
+
+#temp-div p {
+  font-size: 44px;
+  margin: -50px 0 6px;
+  color: #fff;
+}
+
+#weather-info {
+  font-size: 18px;
+  color: #fff;
+}
+
+/*Stunden-Vorhersage*/
+#hourly-forecast {
+  margin-top: 22px;
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  justify-content: center;
+}
+
+.hourly-item {
+  flex: 0 0 auto;
+  width: 80px;
+  text-align: center;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  padding: 6px;
+}
+
+.hourly-item img {
+  width: 34px;
+  height: 34px;
+}
+
+/*Statuszeile*/
+#status {
+  color: #fff;
+  margin-top: 12px;
+  font-style: italic;
+}
+
+/*MEINE STÄDTE SEITE*/
+.saved-list {
+  list-style: none; /* entfernt schwarzen Punkt */
+  padding: 0; /* Standard-Einzug weg */
+  margin: 16px 0 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.saved-list li {
+  margin: 0;
+}
+.saved-list li button {
+  min-width: 140px;
+}
