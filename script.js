@@ -1,8 +1,15 @@
+// API-Schlüssel für OpenWeatherMap
 const apiKey = "d14bf21cb8077992fd7982e5d47b8b62";
 
+
+/**
+ * Liest die Stadt aus dem Eingabefeld aus
+ * Holt aktuelles Wetter & Vorhersage von OpenWeatherMap
+ * Steuert Lade-/Fehlerzustand und räumt die Anzeige vorab auf
+ */
 function getWeather() {
   const cityInput = document.getElementById("city");
-  if (!cityInput) return; // nicht auf dieser Seite
+  if (!cityInput) return;
   const city = cityInput.value.trim();
 
   const status = document.getElementById("status");
@@ -29,10 +36,10 @@ function getWeather() {
     city
   )}&appid=${apiKey}&units=metric&lang=de`;
 
+  // Aktuelles Wetter abrufen
   fetch(currentUrl)
     .then((res) => res.json())
     .then((data) => {
-      // ✅ Wenn Stadt nicht gefunden oder keine Koordinaten vorhanden:
       if (data.cod !== 200 || !data.name) {
         status.textContent =
           "❌ Keine gültige Stadt gefunden. Bitte überprüfe deine Eingabe.";
@@ -45,6 +52,7 @@ function getWeather() {
       status.textContent = "❌ Fehler beim Laden der Wetterdaten.";
     });
 
+  // Vorhersage abrufen
   fetch(forecastUrl)
     .then((res) => res.json())
     .then((data) => {
@@ -53,12 +61,17 @@ function getWeather() {
     .catch(() => {});
 }
 
+/**
+ * Generiert Temperatur, Stadtname, Beschreibung, API-Icon
+ * Wählt zusätzlich ein eigenes Zustandsbild
+ */
 function showWeather(data) {
   const tempDiv = document.getElementById("temp-div");
   const infoDiv = document.getElementById("weather-info");
   const icon = document.getElementById("weather-icon");
   const img = document.getElementById("condition-img");
 
+  // Aus dem API-Objekt die relevanten Infos extrahieren
   const temp = Math.round(data.main.temp);
   const cityName = data.name;
   const desc = data.weather[0].description;
@@ -90,6 +103,10 @@ function showWeather(data) {
   }
 }
 
+/**
+ * Zeigt die nächsten ~18 Stunden (6 Einträge à 3h) als kleine Kacheln
+ * Jede Kachel: Uhrzeit, Icon, Temperatur
+ */
 function showForecast(list) {
   const forecastDiv = document.getElementById("hourly-forecast");
   if (!list) return;
@@ -111,6 +128,7 @@ function showForecast(list) {
   });
 }
 
+//Speichert die aktuelle Eingabe als Favorit in localStorage (ohne Duplikate)
 function saveCity() {
   const city = document.getElementById("city").value.trim();
   if (!city) return alert("Keine Stadt eingegeben.");
@@ -120,6 +138,10 @@ function saveCity() {
   alert(`„${city}“ gespeichert.`);
 }
 
+/**
+ * Liest Favoriten aus localStorage und generiert Buttons
+ * Zeigt einen Hinweis, wenn keine Städte gespeichert sind
+ */
 function loadCities() {
   const list = document.getElementById("savedCitiesList");
   if (!list) return;
@@ -129,9 +151,10 @@ function loadCities() {
     const p = document.createElement("p");
     p.textContent = "Keine Städte gespeichert.";
     p.style.color = "#fff";
-    list.parentElement.appendChild(p); // unter der Überschrift anzeigen
+    list.parentElement.appendChild(p);
     return;
   }
+  // Für jede Stadt einen Button erzeugen, der zur Wetterseite führt
   cities.forEach((city) => {
     const li = document.createElement("li");
     li.innerHTML = `<button onclick="selectCity('${city}')">${city}</button>`;
@@ -139,30 +162,28 @@ function loadCities() {
   });
 }
 
+/**
+ * Übergibt die gewählte Stadt per localStorage an die Wetterseite
+ * Leitet dann zu weather.html weiter
+ */
 function selectCity(city) {
   localStorage.setItem("selectedCity", city);
   window.location.href = "weather.html";
 }
 
+// Löscht alle Favoriten und aktualisiert die Anzeige
 function clearCities() {
   localStorage.removeItem("cities");
   loadCities();
 }
 
-function initContactForm() {
-  const form = document.getElementById("contactForm");
-  if (!form) return;
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    document.getElementById("contactStatus").textContent =
-      "Nachricht gesendet (Demo).";
-    form.reset();
-  });
-}
-
+/**
+ * Startpunkt beim Laden jeder Seite:
+ * Favoriten-Seite: Liste aufbauen
+ * Wetterseite: ggf. zuvor gewählte Stadt automatisch laden
+ */
 window.onload = () => {
   loadCities();
-  initContactForm();
   const selected = localStorage.getItem("selectedCity");
   if (selected && document.getElementById("city")) {
     document.getElementById("city").value = selected;

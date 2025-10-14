@@ -148,8 +148,8 @@ button:hover {
 
 /*MEINE STÄDTE SEITE*/
 .saved-list {
-  list-style: none; /* entfernt schwarzen Punkt */
-  padding: 0; /* Standard-Einzug weg */
+  list-style: none;
+  padding: 0;
   margin: 16px 0 20px;
   display: flex;
   flex-wrap: wrap;
