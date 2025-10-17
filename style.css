@@ -1,3 +1,36 @@
+/* :root = Definiert globale Variablen, auf die das ganze CSS zugreifen kann*/
+:root {
+  /* Light Mode Color Palette */
+  --bg-gradient: linear-gradient(to bottom right, #89bee9, #c2d0db);
+  --header-bg: rgba(20, 63, 156, 0.377);
+  --header-border: rgba(255, 255, 255, 0.3);
+  --text-color: #ffffff;
+  --link-bg-hover: #89bee9;
+  --link-hover-text: #1a1a1a;
+  --card-bg: rgba(20, 63, 156, 0.377);
+  --card-shadow: rgba(0, 0, 0, 0.18);
+  --input-border: #ffffff;
+  --button-bg: rgba(20, 63, 156, 0.5);
+  --button-bg-hover: rgba(20, 63, 156, 0.8);
+  --hourly-bg: rgba(255, 255, 255, 0.22);
+}
+
+/* body.darkmode= Überschreibt Variablen, wenn der Darkmode aktiv ist*/
+body.darkmode {
+  --bg-gradient: linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);
+  --header-bg: rgba(15, 15, 30, 0.8);
+  --header-border: rgba(255, 255, 255, 0.1);
+  --text-color: #e0e0e0;
+  --link-bg-hover: #1a4b7a;
+  --link-hover-text: #ffffff;
+  --card-bg: rgba(25, 25, 40, 0.7);
+  --card-shadow: rgba(0, 0, 0, 0.5);
+  --input-border: #666;
+  --button-bg: rgba(50, 100, 180, 0.4);
+  --button-bg-hover: rgba(50, 100, 180, 0.8);
+  --hourly-bg: rgba(255, 255, 255, 0.08);
+}
+
 /*Grundlayout*/
 body {
   margin: 0;
@@ -5,14 +38,15 @@ body {
   display: flex;
   flex-direction: column;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(to bottom right, #89bee9, #c2d0db);
+  background: var(--bg-gradient);
+  transition: background 0.4s ease, color 0.4s ease;
 }
 
 /*Kopfzeile mit Menü*/
 .header {
-  background: rgba(20, 63, 156, 0.377);
+  background: var(--header-bg);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom: 1px solid var(--header-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -23,25 +57,72 @@ body {
 }
 
 .logo {
-  color: #fff;
+  color: var(--text-color);
   font-size: 1.8rem;
   font-weight: 700;
 }
 
 .menu a {
-  color: #fff;
+  color: var(--text-color);
   text-decoration: none;
   margin-left: 20px;
   padding: 6px 12px;
   border-radius: 8px;
   font-weight: 600;
-  transition: background 0.2s;
+  transition: background 0.2s, color 0.2s;
 }
 
 .menu a:hover,
 .menu a.active {
-  background: #89bee9;
-  color: #1a1a1a;
+  background: var(--link-bg-hover);
+  color: var(--link-hover-text);
+}
+
+/*Darkmode Toggle Button*/
+#darkmode-toggle {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  min-width: 0;
+  background: none;
+  border: 1px solid var(--text-color);
+  color: var(--text-color);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.3s, color 0.3s;
+  margin: 0;
+  line-height: 0;
+}
+
+#darkmode-toggle:hover {
+  background: var(--link-bg-hover);
+  color: var(--link-hover-text);
+}
+
+/* Icons: nur eins anzeigen */
+#darkmode-toggle .icon {
+  width: 24px;
+  height: 24px;
+  display: none;
+  transition: transform 0.4s ease;
+  fill: #e3e3e3;
+}
+
+/* Standard: nur Mond anzeigen */
+#darkmode-toggle .moon-icon {
+  display: block;
+}
+
+/* Wenn Dark Mode aktiv: Sonne anzeigen */
+body.darkmode #darkmode-toggle .moon-icon {
+  display: none;
+}
+body.darkmode #darkmode-toggle .sun-icon {
+  display: block;
+  transform: rotate(360deg);
 }
 
 /*Hauptbereich*/
@@ -55,18 +136,21 @@ body {
 
 /*WETTER-SEITE*/
 #weather-container {
-  background: rgba(20, 63, 156, 0.377);
+  background: var(--card-bg);
   backdrop-filter: blur(12px);
   width: min(95vw, 900px);
   padding: 36px;
   border-radius: 22px;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--card-shadow);
   text-align: center;
 }
 
 h2,
-p {
-  color: #fff;
+p,
+#weather-info,
+#temp-div p,
+#status {
+  color: var(--text-color);
 }
 
 /*Eingaben und Buttons*/
@@ -75,24 +159,25 @@ textarea {
   width: calc(100% - 16px);
   padding: 12px;
   border-radius: 10px;
-  border: 1px solid white;
+  border: 1px solid var(--input-border);
   margin-top: 12px;
   box-sizing: border-box;
 }
 
 button {
-  background: rgba(20, 63, 156, 0.5);
-  color: white;
+  background: var(--button-bg);
+  color: var(--text-color);
   padding: 12px 14px;
   border: none;
   border-radius: 10px;
   cursor: pointer;
   margin-top: 14px;
   min-width: 140px;
+  transition: background 0.3s;
 }
 
 button:hover {
-  background: rgba(20, 63, 156, 0.8);
+  background: var(--button-bg-hover);
 }
 
 /*Wetteranzeige*/
@@ -107,12 +192,10 @@ button:hover {
 #temp-div p {
   font-size: 44px;
   margin: -50px 0 6px;
-  color: #fff;
 }
 
 #weather-info {
   font-size: 18px;
-  color: #fff;
 }
 
 /*Stunden-Vorhersage*/
@@ -128,8 +211,8 @@ button:hover {
   flex: 0 0 auto;
   width: 80px;
   text-align: center;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.22);
+  color: var(--text-color);
+  background: var(--hourly-bg);
   border-radius: 10px;
   padding: 6px;
 }
@@ -141,7 +224,7 @@ button:hover {
 
 /*Statuszeile*/
 #status {
-  color: #fff;
+  color: var(--text-color);
   margin-top: 12px;
   font-style: italic;
 }
