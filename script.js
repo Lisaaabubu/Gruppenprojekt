@@ -1,152 +1,202 @@
-// API-Schlüssel für OpenWeatherMap
-const apiKey = "d14bf21cb8077992fd7982e5d47b8b62";
+// ===============================
+// 🌤️ Wetter-App Script – finale Version mit GeoDB & Statusmeldungen
+// ===============================
+
+// 🔑 API-Keys
+const apiKey = "d14bf21cb8077992fd7982e5d47b8b62"; // OpenWeatherMap
+const geoApiKey = "6406ec1b65mshf22b632f0d6ce5ep1d258bjsn05e4489b26d5";         // RapidAPI-Key für GeoDB Cities
+
+let lastValidCity = null;
+
+// ===============================
+// 1️⃣ GeoDB: Prüft, ob Eingabe eine echte Stadt ist
+// ===============================
+// 🔍 Prüft mit GeoDB Cities API, ob es eine echte Stadt ist
+// Prüft mit Nominatim (OpenStreetMap), ob es eine Stadt ist
+// Prüft mit Nominatim (OpenStreetMap), ob es eine Stadt ist
+// Prüft mit Nominatim (OpenStreetMap), ob es eine Stadt ist
+async function validateCity(city) {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+    city
+  )}&format=json&addressdetails=1&limit=1`;
+
+  const res = await fetch(url, {
+    headers: { "User-Agent": "Wetterseite/1.0 (example@example.com)" },
+  });
+
+  const data = await res.json();
+  if (!data || data.length === 0) return null;
+
+  const place = data[0];
+  const type = (place.type || "").toLowerCase();
+  const category = (place.category || "").toLowerCase();
+
+  // Typen, die als Städte gelten
+  const cityTypes = [
+    "city",
+    "town",
+    "village",
+    "municipality",
+    "hamlet",
+    "locality",
+    "administrative", // <-- nötig für Wien
+  ];
+
+  // 1️⃣ Länder & Regionen rausfiltern
+  if (["country", "continent", "state", "region"].includes(type)) return null;
+
+  // 2️⃣ Nur Orte akzeptieren, die place oder administrative area sind
+  if (!cityTypes.includes(type) && category !== "place") return null;
+
+  // 3️⃣ Wenn das Land-Feld exakt der Eingabe entspricht -> kein Stadtname
+  const lowerCity = city.toLowerCase();
+  const countryName = place.address?.country?.toLowerCase() || "";
+  if (lowerCity === countryName) return null;
+
+  // ✅ gültige Stadt zurückgeben
+  return {
+    name: place.display_name.split(",")[0],
+    lat: place.lat,
+    lon: place.lon,
+    country: place.address?.country_code?.toUpperCase() || "",
+  };
+}
 
 
-/**
- * Liest die Stadt aus dem Eingabefeld aus
- * Holt aktuelles Wetter & Vorhersage von OpenWeatherMap
- * Steuert Lade-/Fehlerzustand und räumt die Anzeige vorab auf
- */
-function getWeather() {
+
+
+
+// ===============================
+// 2️⃣ Wetter nur laden, wenn Stadt gültig ist
+// ===============================
+async function getWeather() {
   const cityInput = document.getElementById("city");
-  if (!cityInput) return;
-  const city = cityInput.value.trim();
-
-  const status = document.getElementById("status");
-  const icon = document.getElementById("weather-icon");
-  const img = document.getElementById("condition-img");
+  const city = cityInput?.value.trim();
+  const conditionImg = document.getElementById("condition-img");
   const tempDiv = document.getElementById("temp-div");
   const infoDiv = document.getElementById("weather-info");
   const forecastDiv = document.getElementById("hourly-forecast");
 
   if (!city) {
-    alert("Bitte gib eine Stadt ein.");
+    showStatus("Bitte gib eine Stadt ein.", "error");
     return;
   }
 
-  status.textContent = "Lade Wetterdaten...";
-  tempDiv.innerHTML = infoDiv.innerHTML = forecastDiv.innerHTML = "";
-  if (icon) icon.style.display = "none";
-  if (img) img.style.display = "none";
+  // Anzeige zurücksetzen
+  showStatus("Prüfe Eingabe...", "info");
+  tempDiv.innerHTML = "";
+  infoDiv.innerHTML = "";
+  forecastDiv.innerHTML = "";
+  if (conditionImg) conditionImg.style.display = "none";
 
-  const currentUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
-    city
-  )}&appid=${apiKey}&units=metric&lang=de`;
-  const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(
-    city
-  )}&appid=${apiKey}&units=metric&lang=de`;
+  try {
+    // 1️⃣ Prüfen, ob Stadt existiert
+    const valid = await validateCity(city);
+    if (!valid) {
+      showStatus("Keine gültige Stadt gefunden. Bitte überprüfe deine Eingabe.", "error");
+      lastValidCity = null;
+      return;
+    }
 
-  // Aktuelles Wetter abrufen
-  fetch(currentUrl)
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.cod !== 200 || !data.name) {
-        status.textContent =
-          "❌ Keine gültige Stadt gefunden. Bitte überprüfe deine Eingabe.";
-        return;
-      }
-      showWeather(data);
-      status.textContent = "";
-    })
-    .catch(() => {
-      status.textContent = "❌ Fehler beim Laden der Wetterdaten.";
-    });
+    const { lat, lon, name } = valid;
+    lastValidCity = name;
+    showStatus("Lade Wetterdaten...", "info");
 
-  // Vorhersage abrufen
-  fetch(forecastUrl)
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.list) showForecast(data.list);
-    })
-    .catch(() => {});
+    // 2️⃣ Wetterdaten abrufen
+    const currentUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=de`;
+    const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=de`;
+
+    const res = await fetch(currentUrl);
+    const data = await res.json();
+    if (data.cod !== 200) {
+      showStatus("Fehler beim Laden der Wetterdaten.", "error");
+      lastValidCity = null;
+      return;
+    }
+
+    showWeather(data);
+    showStatus(`Wetterdaten für ${name} geladen.`, "success");
+
+    const res2 = await fetch(forecastUrl);
+    const forecast = await res2.json();
+    if (forecast.list) showForecast(forecast.list);
+  } catch (err) {
+    console.error(err);
+    showStatus("Fehler beim Laden der Wetterdaten.", "error");
+    lastValidCity = null;
+  }
 }
 
-/**
- * Generiert Temperatur, Stadtname, Beschreibung, API-Icon
- * Wählt zusätzlich ein eigenes Zustandsbild
- */
+// ===============================
+// 3️⃣ Anzeige: Aktuelles Wetter
+// ===============================
 function showWeather(data) {
   const tempDiv = document.getElementById("temp-div");
   const infoDiv = document.getElementById("weather-info");
-  const icon = document.getElementById("weather-icon");
-  const img = document.getElementById("condition-img");
+  const conditionImg = document.getElementById("condition-img");
 
-  // Aus dem API-Objekt die relevanten Infos extrahieren
   const temp = Math.round(data.main.temp);
   const cityName = data.name;
   const desc = data.weather[0].description;
   const iconCode = data.weather[0].icon;
-  const condition = data.weather[0].main;
 
   tempDiv.innerHTML = `<p>${temp}°C</p>`;
   infoDiv.innerHTML = `<p>${cityName}</p><p>${desc}</p>`;
 
-  if (icon) {
-    icon.src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
-    icon.alt = desc;
-    icon.style.display = "block";
-  }
-
-  // Zustandsgrafiken
-  const imgMap = {
-    Clear: "img/sunny.png",
-    Clouds: "img/cloudy.png",
-    Rain: "img/rainy.png",
-    Snow: "img/snow.png",
-    Thunderstorm: "img/stormy.png",
-    Mist: "img/mist.png",
-    default: "img/default.png",
-  };
-  if (img) {
-    img.src = imgMap[condition] || imgMap.default;
-    img.style.display = "block";
+  if (conditionImg && iconCode) {
+    let iconUrl = `https://openweathermap.org/img/wn/${iconCode}@4x.png`;
+    if (iconCode.endsWith("n")) {
+      iconUrl = "https://openweathermap.org/img/wn/01n@4x.png";
+    }
+    conditionImg.src = iconUrl;
+    conditionImg.alt = desc;
+    conditionImg.style.display = "block";
   }
 }
 
-/**
- * Zeigt die nächsten ~18 Stunden (6 Einträge à 3h) als kleine Kacheln
- * Jede Kachel: Uhrzeit, Icon, Temperatur
- */
+// ===============================
+// 4️⃣ Anzeige: Stunden-Vorhersage
+// ===============================
 function showForecast(list) {
   const forecastDiv = document.getElementById("hourly-forecast");
-  if (!list) return;
   forecastDiv.innerHTML = "";
-
-  const next = list.slice(0, 6);
-  next.forEach((item) => {
-    const date = new Date(item.dt * 1000);
-    const hour = date.getHours();
+  list.slice(0, 6).forEach((item) => {
+    const hour = new Date(item.dt * 1000).getHours();
     const temp = Math.round(item.main.temp);
     const icon = item.weather[0].icon;
+    const desc = item.weather[0].description;
 
     forecastDiv.innerHTML += `
       <div class="hourly-item">
         <span>${hour}:00</span>
-        <img src="https://openweathermap.org/img/wn/${icon}.png" alt="">
+        <img src="https://openweathermap.org/img/wn/${icon}.png" alt="${desc}">
         <span>${temp}°C</span>
       </div>`;
   });
 }
 
-//Speichert die aktuelle Eingabe als Favorit in localStorage (ohne Duplikate)
+// ===============================
+// 5️⃣ Favoriten-Funktionen
+// ===============================
 function saveCity() {
   const city = document.getElementById("city").value.trim();
-  if (!city) return alert("Keine Stadt eingegeben.");
-  let cities = JSON.parse(localStorage.getItem("cities") || "[]");
-  if (!cities.includes(city)) cities.push(city);
+  if (!lastValidCity || lastValidCity.toLowerCase() !== city.toLowerCase()) {
+    showStatus("Bitte zuerst eine gültige Stadt suchen, bevor du sie speicherst.", "error");
+    return;
+  }
+
+  const cities = JSON.parse(localStorage.getItem("cities") || "[]");
+  if (!cities.includes(lastValidCity)) cities.push(lastValidCity);
   localStorage.setItem("cities", JSON.stringify(cities));
-  alert(`„${city}“ gespeichert.`);
+  showStatus(`„${lastValidCity}“ wurde gespeichert.`, "success");
 }
 
-/**
- * Liest Favoriten aus localStorage und generiert Buttons
- * Zeigt einen Hinweis, wenn keine Städte gespeichert sind
- */
 function loadCities() {
   const list = document.getElementById("savedCitiesList");
   if (!list) return;
   const cities = JSON.parse(localStorage.getItem("cities") || "[]");
   list.innerHTML = "";
+
   if (cities.length === 0) {
     const p = document.createElement("p");
     p.textContent = "Keine Städte gespeichert.";
@@ -154,7 +204,7 @@ function loadCities() {
     list.parentElement.appendChild(p);
     return;
   }
-  // Für jede Stadt einen Button erzeugen, der zur Wetterseite führt
+
   cities.forEach((city) => {
     const li = document.createElement("li");
     li.innerHTML = `<button onclick="selectCity('${city}')">${city}</button>`;
@@ -162,26 +212,50 @@ function loadCities() {
   });
 }
 
-/**
- * Übergibt die gewählte Stadt per localStorage an die Wetterseite
- * Leitet dann zu weather.html weiter
- */
 function selectCity(city) {
   localStorage.setItem("selectedCity", city);
   window.location.href = "weather.html";
 }
 
-// Löscht alle Favoriten und aktualisiert die Anzeige
 function clearCities() {
   localStorage.removeItem("cities");
   loadCities();
+  showStatus("Alle Favoriten gelöscht.", "success");
 }
 
-/**
- * Startpunkt beim Laden jeder Seite:
- * Favoriten-Seite: Liste aufbauen
- * Wetterseite: ggf. zuvor gewählte Stadt automatisch laden
- */
+// ===============================
+// 6️⃣ Einheitliche Statusmeldungen
+// ===============================
+function showStatus(message, type = "info") {
+  const status = document.getElementById("status");
+  if (!status) return;
+
+  let symbol = "";
+  switch (type) {
+    case "error":
+      status.style.color = "#ff5555";
+      symbol = "❌";
+      break;
+    case "success":
+      status.style.color = "#4de070";
+      symbol = "✅";
+      break;
+    default:
+      status.style.color = "#ffffff";
+      symbol = "ℹ️";
+  }
+
+  status.textContent = `${symbol}  ${message}`;
+
+  clearTimeout(showStatus._timer);
+  showStatus._timer = setTimeout(() => {
+    status.textContent = "";
+  }, 4000);
+}
+
+// ===============================
+// 7️⃣ Automatischer Start
+// ===============================
 window.onload = () => {
   loadCities();
   const selected = localStorage.getItem("selectedCity");

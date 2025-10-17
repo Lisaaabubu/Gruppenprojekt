@@ -181,7 +181,10 @@ button:hover {
 }
 
 /*Wetteranzeige*/
-#weather-icon,
+#weather-icon {
+  display: none !important;
+}
+
 #condition-img {
   width: 130px;
   height: 130px;
@@ -197,6 +200,8 @@ button:hover {
 #weather-info {
   font-size: 18px;
 }
+
+
 
 /*Stunden-Vorhersage*/
 #hourly-forecast {
@@ -225,8 +230,11 @@ button:hover {
 /*Statuszeile*/
 #status {
   color: var(--text-color);
-  margin-top: 12px;
+  margin-top: 16px;
   font-style: italic;
+  transition: opacity 0.3s ease;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 /*MEINE STÄDTE SEITE*/
