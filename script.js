@@ -5,7 +5,7 @@
 // 🔑 API-Keys
 const apiKey = "d14bf21cb8077992fd7982e5d47b8b62"; // OpenWeatherMap
 const geoApiKey = "6406ec1b65mshf22b632f0d6ce5ep1d258bjsn05e4489b26d5";         // RapidAPI-Key für GeoDB Cities
-
+//API Key Alternative= e99530c41d166c62189c3550b7ba5a29
 let lastValidCity = null;
 
 // ===============================
