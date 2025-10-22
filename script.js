@@ -194,60 +194,73 @@ function showForecast(list) //Liste mit Wetterwerten für verschiedene Zeitpunkt
 
 function saveCity() 
 {
-  const city = document.getElementById("city").value.trim();
-  if (!lastValidCity || lastValidCity.toLowerCase() !== city.toLowerCase()) 
+  const city = document.getElementById("city").value.trim();//holt Wert aus Eingabefeld
+  if (!lastValidCity || lastValidCity.toLowerCase() !== city.toLowerCase()) //ist Stadt gültig?
     {
     showStatus("Bitte zuerst eine gültige Stadt suchen, bevor du sie speicherst.", "error");
     return;
     }
 
-  const cities = JSON.parse(localStorage.getItem("cities") || "[]");
+  const cities = JSON.parse(localStorage.getItem("cities") || "[]");//aktuelle Liste aus localStorage holen
+  //wandelt JSON-String in JavaScript-Array um, wenn noch nicht gespeichert =leeres Arryay
   if (!cities.includes(lastValidCity)) cities.push(lastValidCity);
+  //ist Stadt bereits im Array?, wenn nicht hinzufügen
   localStorage.setItem("cities", JSON.stringify(cities));
-  showStatus(`„${lastValidCity}“ wurde gespeichert.`, "success");
+  //Array wird wieder in JSON-String umgewandelt und im localStorage gespeichert
+  showStatus(`„${lastValidCity}“ wurde gespeichert.`, "success");//UX Hinweis
 }
 
-function loadCities() {
-  const list = document.getElementById("savedCitiesList");
+function loadCities()//lädt alle gespeicherten städte
+{
+  const list = document.getElementById("savedCitiesList");//sucht ul oder div Elemente=gespeicherte Städte
   if (!list) return;
-  const cities = JSON.parse(localStorage.getItem("cities") || "[]");
-  list.innerHTML = "";
+  const cities = JSON.parse(localStorage.getItem("cities") || "[]");//holt Favoriten aus localStorage
+  //wenn nichts gespeichert = leeres Array
+  list.innerHTML = "";//Liste wird geleert
 
-  if (cities.length === 0) {
-    const p = document.createElement("p");
-    p.textContent = "Keine Städte gespeichert.";
+  if (cities.length === 0) //sind Städte gespeichert?
+    {
+    const p = document.createElement("p");//erstellt neuen Absatz
+    p.textContent = "Keine Städte gespeichert.";//UX Hinweis
     p.style.color = "#fff";
-    list.parentElement.appendChild(p);
+    list.parentElement.appendChild(p);//Absatz wird unter der Liste eingefügt
+    //parentElement=übergeordnetes Element der Liste
     return;
-  }
-
-  cities.forEach((city) => {
+    }
+//Städte werden dynamisch eingefügt
+  cities.forEach((city) => 
+    {
     const li = document.createElement("li");
-    li.innerHTML = `<button onclick="selectCity('${city}')">${city}</button>`;
-    list.appendChild(li);
-  });
+    li.innerHTML = `<button onclick="selectCity('${city}')">${city}</button>`;//erstellt Button für jede Stadt
+    //bei Click wird Stadt selected
+    list.appendChild(li);//fügt Listenelement der Liste hinzu
+    });
 }
 
-function selectCity(city) {
+function selectCity(city) 
+{//speichert gewählte Stadt im localStorage und lädt Wetterseite
   localStorage.setItem("selectedCity", city);
   window.location.href = "weather.html";
 }
 
-function clearCities() {
-  localStorage.removeItem("cities");
-  loadCities();
-  showStatus("Alle Favoriten gelöscht.", "success");
+function clearCities() 
+{//löscht alle gespeicherten Städte
+  localStorage.removeItem("cities");//entfernt Eintrag aus localStorage
+  loadCities();//Liste wird neu geladen und ist leer
+  showStatus("Alle Favoriten gelöscht.", "success");//UX Hinweis
 }
 
 
 //Einheitliche Statusmeldungen
 
-function showStatus(message, type = "info") {
+function showStatus(message, type = "info") 
+{
   const status = document.getElementById("status");
-  if (!status) return;
+  if (!status) return;//gibt es Status-Element?
 
-  let symbol = "";
-  switch (type) {
+  let symbol = "";//Symbol für Meldung
+  switch (type) 
+  {
     case "error":
       status.style.color = "#ff5555";
       symbol = "❌";
@@ -261,23 +274,27 @@ function showStatus(message, type = "info") {
       symbol = "ℹ️";
   }
 
-  status.textContent = `${symbol}  ${message}`;
-
+  status.textContent = `${symbol}  ${message}`;//Meldung mit Symbol anzeigen
+  //Meldung nach 4 Sekunden ausblenden
   clearTimeout(showStatus._timer);
-  showStatus._timer = setTimeout(() => {
+  showStatus._timer = setTimeout(() => 
+    {
     status.textContent = "";
-  }, 4000);
+    }, 4000);
 }
 
 
 //Automatischer Start
 
-window.onload = () => {
-  loadCities();
-  const selected = localStorage.getItem("selectedCity");
-  if (selected && document.getElementById("city")) {
-    document.getElementById("city").value = selected;
-    localStorage.removeItem("selectedCity");
-    getWeather();
-  }
-};
+window.onload = () => //erst ausführen wenn Seite komplett geladen ist
+  {
+  loadCities();//Lädt Favoriten
+  const selected = localStorage.getItem("selectedCity");//prüft ob Stadt ausgewählt wurde
+  //zb bei Klick auf Favorit wird er im localStorage gespeichert
+  if (selected && document.getElementById("city")) //gibt es ausgewählte Stadt? gibt es Eingabefeld?
+    {
+    document.getElementById("city").value = selected;//schreibt gespeicherte Stadt in Eingabefeld
+    localStorage.removeItem("selectedCity");//entfernt Eintrag aus localStorage
+    getWeather();//lädt Wetter für die Stadt
+    }
+  };
