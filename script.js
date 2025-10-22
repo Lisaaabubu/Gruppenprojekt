@@ -1,189 +1,205 @@
-// ===============================
-// 🌤️ Wetter-App Script – finale Version mit GeoDB & Statusmeldungen
-// ===============================
 
-// 🔑 API-Keys
+//API-Keys
 const apiKey = "d14bf21cb8077992fd7982e5d47b8b62"; // OpenWeatherMap
-const geoApiKey = "6406ec1b65mshf22b632f0d6ce5ep1d258bjsn05e4489b26d5";         // RapidAPI-Key für GeoDB Cities
+const geoApiKey = "6406ec1b65mshf22b632f0d6ce5ep1d258bjsn05e4489b26d5";// RapidAPI-Key für GeoDB Cities
 //API Key Alternative= e99530c41d166c62189c3550b7ba5a29
-let lastValidCity = null;
+let lastValidCity = null;//Variable die zuletzt gültige Stadt speichert
 
-// ===============================
-// 1️⃣ GeoDB: Prüft, ob Eingabe eine echte Stadt ist
-// ===============================
-// 🔍 Prüft mit GeoDB Cities API, ob es eine echte Stadt ist
+
+// GeoDB: Prüft, ob Eingabe eine echte Stadt ist
 // Prüft mit Nominatim (OpenStreetMap), ob es eine Stadt ist
-// Prüft mit Nominatim (OpenStreetMap), ob es eine Stadt ist
-// Prüft mit Nominatim (OpenStreetMap), ob es eine Stadt ist
-async function validateCity(city) {
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+async function validateCity(city) //arbeitet asynchron, kann also auf Netzwerkantwort warten
+{
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent //URL für API-Request
+    (                                                         //Sonderezeichen/Leerzeichen werden korrekt in URL kodiert
     city
-  )}&format=json&addressdetails=1&limit=1`;
+    )
+      }&format=json&addressdetails=1&limit=1`;//format=jason; detaillierte Adressinfor anfordern (Land, Region, Ort)
+      //nur erstes Ergebis wird zurückgegeben (limit=1)
+    
+  const res = await fetch(url, //Konstante res speichert Antwort der API, wartet auf Antwort
+    {               //fetch sendet HTTP-Anfrage an die API
+    headers: { "User-Agent": "Wetterseite/1.0 (example@example.com)" },//damit OpenStreetMap Anfragen akzeptiert
+    });
 
-  const res = await fetch(url, {
-    headers: { "User-Agent": "Wetterseite/1.0 (example@example.com)" },
-  });
-
-  const data = await res.json();
-  if (!data || data.length === 0) return null;
-
-  const place = data[0];
-  const type = (place.type || "").toLowerCase();
-  const category = (place.category || "").toLowerCase();
+  const data = await res.json();//wandelt Antwort in ein JavaScript-Objekt um
+  if (!data || data.length === 0) return null;//ist Ergebnis zurückgekommen? wenn nicht, null zurückgeben
+                        //bei NULL=Stadt existiert nicht
+  const place = data[0];//erstes Suchergebnis wird in place gespeichert
+  const type = (place.type || "").toLowerCase();//was es ist (Staddt, land,...)
+  const category = (place.category || "").toLowerCase();//allgemeine Kategorie (Ort, Gebäude,...)
 
   // Typen, die als Städte gelten
-  const cityTypes = [
+  const cityTypes = 
+  [
     "city",
     "town",
     "village",
-    "municipality",
-    "hamlet",
-    "locality",
-    "administrative", // <-- nötig für Wien
+    "municipality",//Gemeinde
+    "hamlet",//Dorf
+    "locality",//Gegend
+    "administrative", //nötig für Wien
   ];
 
-  // 1️⃣ Länder & Regionen rausfiltern
+  //Länder & Regionen rausfiltern
   if (["country", "continent", "state", "region"].includes(type)) return null;
 
-  // 2️⃣ Nur Orte akzeptieren, die place oder administrative area sind
+  //Nur Orte akzeptieren, die place oder administrative area sind
   if (!cityTypes.includes(type) && category !== "place") return null;
 
-  // 3️⃣ Wenn das Land-Feld exakt der Eingabe entspricht -> kein Stadtname
+  //Wenn das Land-Feld exakt der Eingabe entspricht -> kein Stadtname
   const lowerCity = city.toLowerCase();
   const countryName = place.address?.country?.toLowerCase() || "";
   if (lowerCity === countryName) return null;
 
-  // ✅ gültige Stadt zurückgeben
+  //gültige Stadt zurückgeben
   return {
-    name: place.display_name.split(",")[0],
-    lat: place.lat,
-    lon: place.lon,
-    country: place.address?.country_code?.toUpperCase() || "",
+    name: place.display_name.split(",")[0],//Name (nur erstes Element id String der API)
+    lat: place.lat,//Breitengrad
+    lon: place.lon,//Längengrad
+    country: place.address?.country_code?.toUpperCase() || "",//Ländercode in Großbuchstaben
+    //wenn kein Ländercode vorhanden, wird leerer String zurückgegeben (?wenn erstes da, wird zweites ausgeführt)
   };
 }
 
 
-
-
-
-// ===============================
-// 2️⃣ Wetter nur laden, wenn Stadt gültig ist
-// ===============================
-async function getWeather() {
-  const cityInput = document.getElementById("city");
-  const city = cityInput?.value.trim();
+//WETTER LADEN & ANZEIGEN
+async function getWeather() //verhindert, dass Code weiterläuft bevor Antwort der API da ist
+{//alle wichtigen Daten aus HTML holen
+  const cityInput = document.getElementById("city");//Eingabefeld Stadt
+  const city = cityInput?.value.trim();//entfernt Leerzeichen
   const conditionImg = document.getElementById("condition-img");
-  const tempDiv = document.getElementById("temp-div");
-  const infoDiv = document.getElementById("weather-info");
-  const forecastDiv = document.getElementById("hourly-forecast");
+  const tempDiv = document.getElementById("temp-div");//Bereich für Temperatur
+  const infoDiv = document.getElementById("weather-info");//Bereich für Wetterinfo
+  const forecastDiv = document.getElementById("hourly-forecast");//Bereich für Stunden-Vorhersage
 
-  if (!city) {
+  if (!city) //wurde was eingegeben?
+    {
     showStatus("Bitte gib eine Stadt ein.", "error");
     return;
-  }
+    }
 
   // Anzeige zurücksetzen
-  showStatus("Prüfe Eingabe...", "info");
-  tempDiv.innerHTML = "";
-  infoDiv.innerHTML = "";
-  forecastDiv.innerHTML = "";
-  if (conditionImg) conditionImg.style.display = "none";
+  showStatus("Prüfe Eingabe...", "info");//Hinweis, dass Eingabe geprüft wird
+  tempDiv.innerHTML = "";//alle Temperaturdaten werden gelöscht
+  infoDiv.innerHTML = "";//alle Wetterdaten werden gelöscht
+  forecastDiv.innerHTML = "";//alle Stunden-Vorhersage werden gelöscht
+  if (conditionImg) conditionImg.style.display = "none";//Wetter-Icon wird ausgeblendet
 
-  try {
-    // 1️⃣ Prüfen, ob Stadt existiert
+  try 
+  {
+    //Prüfen, ob Stadt existiert
     const valid = await validateCity(city);
-    if (!valid) {
+    if (!valid) 
+      {
       showStatus("Keine gültige Stadt gefunden. Bitte überprüfe deine Eingabe.", "error");
       lastValidCity = null;
       return;
-    }
+      }
 
-    const { lat, lon, name } = valid;
-    lastValidCity = name;
-    showStatus("Lade Wetterdaten...", "info");
+    const { lat, lon, name } = valid;//Werte direkt aus zurückgegebenem Objekt entnehmen
+    lastValidCity = name;//letzte gültige Stadt speichern
+    showStatus("Lade Wetterdaten...", "info");//UX Hinweis
 
-    // 2️⃣ Wetterdaten abrufen
+    //Wetterdaten abrufen
     const currentUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=de`;
     const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=de`;
-
-    const res = await fetch(currentUrl);
-    const data = await res.json();
-    if (data.cod !== 200) {
+      //URL für Wetter-API zusammenbauen (Breitengrad, Längengrad, API-Key, metrische Einheiten, deutsche Sprache)
+    const res = await fetch(currentUrl);//ruft Daten vom Server ab
+    const data = await res.json();//wandelt Antwort in JavaScript-Objekt um
+      //bei Erfolg gibt API Code 200 zurück
+    if (data.cod !== 200) //wenn Erfolgscode nicht 200 ist, dann Fehler
+      {
       showStatus("Fehler beim Laden der Wetterdaten.", "error");
       lastValidCity = null;
       return;
-    }
+      }
 
-    showWeather(data);
-    showStatus(`Wetterdaten für ${name} geladen.`, "success");
+    showWeather(data);//Daten an showWeather Funktion übergeben
+    showStatus(`Wetterdaten für ${name} geladen.`, "success");//Erfolgsmeldung
 
-    const res2 = await fetch(forecastUrl);
+    //Stunden-Vorhersage abrufen
+    const res2 = await fetch(forecastUrl);//zweiter API-Call für Vorhersage
     const forecast = await res2.json();
-    if (forecast.list) showForecast(forecast.list);
-  } catch (err) {
-    console.error(err);
-    showStatus("Fehler beim Laden der Wetterdaten.", "error");
-    lastValidCity = null;
-  }
+    if (forecast.list) showForecast(forecast.list);//forecast.list enthält mehrere Zeitpunkte mit Wetterdaten
+    //wenn list existiert, wird sie an showForecast Funktion übergeben
+  } catch (err) 
+      {
+        console.error(err);
+        showStatus("Fehler beim Laden der Wetterdaten.", "error");
+        lastValidCity = null;
+      }
 }
 
-// ===============================
-// 3️⃣ Anzeige: Aktuelles Wetter
-// ===============================
-function showWeather(data) {
-  const tempDiv = document.getElementById("temp-div");
-  const infoDiv = document.getElementById("weather-info");
-  const conditionImg = document.getElementById("condition-img");
 
-  const temp = Math.round(data.main.temp);
-  const cityName = data.name;
-  const desc = data.weather[0].description;
-  const iconCode = data.weather[0].icon;
+//Anzeige: Aktuelles Wetter
 
+function showWeather(data)
+{
+  const tempDiv = document.getElementById("temp-div");//Bereich für Temperatur
+  const infoDiv = document.getElementById("weather-info");//Bereich für Wetterinfo
+  const conditionImg = document.getElementById("condition-img");//Bereich für Wetter-Icon
+
+  const temp = Math.round(data.main.temp);//Temp in Grad Celsius, gerundet
+  const cityName = data.name;//Name der Stadt
+  const desc = data.weather[0].description;//Wetterbeschreibung (erstes Objet)
+  const iconCode = data.weather[0].icon;//Icon-Code für Wetterzustand
+
+  //Inhalte werden dynamisch in HTML eingefügt
   tempDiv.innerHTML = `<p>${temp}°C</p>`;
   infoDiv.innerHTML = `<p>${cityName}</p><p>${desc}</p>`;
 
-  if (conditionImg && iconCode) {
-    let iconUrl = `https://openweathermap.org/img/wn/${iconCode}@4x.png`;
-    if (iconCode.endsWith("n")) {
-      iconUrl = "https://openweathermap.org/img/wn/01n@4x.png";
+  if (conditionImg && iconCode) //gibt es ein Icon?Icon-Code?von API?
+    {
+    let iconUrl = `https://openweathermap.org/img/wn/${iconCode}@4x.png`;//URL für Icon (4fache vergrößerung)
+    if (iconCode.endsWith("n")) //Nacht-Icons anpassen
+      {
+      iconUrl = "https://openweathermap.org/img/wn/01n@4x.png";//URL für Standard-Nacht-Icon
+      }
+    conditionImg.src = iconUrl;//setzt Bildquelle auf die URL
+    conditionImg.alt = desc;//Alternativtext falls Bild nicht geladen werden kann
+    conditionImg.style.display = "block";//Icon wird angezeigt
     }
-    conditionImg.src = iconUrl;
-    conditionImg.alt = desc;
-    conditionImg.style.display = "block";
-  }
 }
 
-// ===============================
-// 4️⃣ Anzeige: Stunden-Vorhersage
-// ===============================
-function showForecast(list) {
+
+//Anzeige: Stunden-Vorhersage
+
+function showForecast(list) //Liste mit Wetterwerten für verschiedene Zeitpunkte
+{
   const forecastDiv = document.getElementById("hourly-forecast");
-  forecastDiv.innerHTML = "";
-  list.slice(0, 6).forEach((item) => {
-    const hour = new Date(item.dt * 1000).getHours();
+  forecastDiv.innerHTML = "";//Bereich in dem Vorhersage angezeigt wird, wird geleert
+
+  //Nur die nächsten 6 Stunden anzeigen
+  list.slice(0, 6).forEach((item) => //forEach durchläuft alle 6 Emelemnte
+    {
+    const hour = new Date(item.dt * 1000).getHours();//Zeitstempel in Stunden umwandeln
     const temp = Math.round(item.main.temp);
     const icon = item.weather[0].icon;
     const desc = item.weather[0].description;
 
+      //HTML für jede Stunde wird dynamisch erstellt und in den Bereich eingefügt
+      //+=fügt neuen Inhalt an forecastDiv hinzu, ohne alten zu löschen
     forecastDiv.innerHTML += `
       <div class="hourly-item">
         <span>${hour}:00</span>
         <img src="https://openweathermap.org/img/wn/${icon}.png" alt="${desc}">
         <span>${temp}°C</span>
       </div>`;
-  });
+    });
 }
 
-// ===============================
-// 5️⃣ Favoriten-Funktionen
-// ===============================
-function saveCity() {
+
+//Favoriten-Funktionen
+
+function saveCity() 
+{
   const city = document.getElementById("city").value.trim();
-  if (!lastValidCity || lastValidCity.toLowerCase() !== city.toLowerCase()) {
+  if (!lastValidCity || lastValidCity.toLowerCase() !== city.toLowerCase()) 
+    {
     showStatus("Bitte zuerst eine gültige Stadt suchen, bevor du sie speicherst.", "error");
     return;
-  }
+    }
 
   const cities = JSON.parse(localStorage.getItem("cities") || "[]");
   if (!cities.includes(lastValidCity)) cities.push(lastValidCity);
@@ -223,9 +239,9 @@ function clearCities() {
   showStatus("Alle Favoriten gelöscht.", "success");
 }
 
-// ===============================
-// 6️⃣ Einheitliche Statusmeldungen
-// ===============================
+
+//Einheitliche Statusmeldungen
+
 function showStatus(message, type = "info") {
   const status = document.getElementById("status");
   if (!status) return;
@@ -253,9 +269,9 @@ function showStatus(message, type = "info") {
   }, 4000);
 }
 
-// ===============================
-// 7️⃣ Automatischer Start
-// ===============================
+
+//Automatischer Start
+
 window.onload = () => {
   loadCities();
   const selected = localStorage.getItem("selectedCity");
